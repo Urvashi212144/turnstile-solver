@@ -62,6 +62,18 @@ def _solver_proxy() -> Optional[str]:
     return (os.environ.get("SOLVER_PROXY") or "").strip() or None
 
 
+def _fingerprint_os() -> str:
+    """Single OS for the spoofed fingerprint.
+
+    camoufox 0.5.x turns a *list* of OS names into an fpgen predicate that
+    matches nothing, raising InvalidConstraints('... no possible values for
+    "os"') and crash-looping the service. A single value always works.
+    Override with FINGERPRINT_OS=windows|macos|linux (default: windows).
+    """
+    val = (os.environ.get("FINGERPRINT_OS") or "windows").strip().lower()
+    return val if val in ("windows", "macos", "linux") else "windows"
+
+
 def _headless_mode():
     """Default to headed under the entrypoint-managed Xvfb. Headless
     Camoufox/Firefox can still be requested via HEADLESS=true but real
@@ -140,7 +152,7 @@ class BrowserSingleton:
                 humanize=True,
                 persistent_context=True,
                 user_data_dir=profile,
-                os=["windows", "macos", "linux"],
+                os=_fingerprint_os(),
                 locale="en-US",
                 exclude_addons=[DefaultAddons.UBO],
             )
